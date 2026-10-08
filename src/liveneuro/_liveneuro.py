@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from typing import Literal
 
 import dash
 import mne  # type: ignore[import-untyped]
@@ -279,7 +280,7 @@ class LiveNeuro:
         self,
         port: int | None = None,
         debug: bool = False,
-        mode: str | None = None,
+        mode: Literal["inline", "external", "jupyterlab"] | None = None,
     ) -> None:
         """Run the interactive visualization.
 

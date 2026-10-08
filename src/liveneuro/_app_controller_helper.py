@@ -6,7 +6,7 @@ handling callbacks, hover/click events, and export functionality.
 """
 
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dash
 import numpy as np
@@ -204,7 +204,7 @@ class AppControllerHelper:
         self,
         port: int | None = None,
         debug: bool = False,
-        mode: str | None = None,
+        mode: Literal["inline", "external", "jupyterlab"] | None = None,
     ) -> None:
         """Run the Dash app.
 
