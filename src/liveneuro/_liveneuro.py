@@ -290,13 +290,12 @@ class LiveNeuro:
         debug
             Enable Dash debug mode.
         mode
-            Display mode. If None, auto-selects based on environment.
-            Common values are ``"inline"``, ``"jupyterlab"``, and ``"external"``.
+            Display mode under an IPython kernel (Jupyter): ``"external"``
+            (default), ``"inline"``, or ``"jupyterlab"``. Ignored elsewhere.
+            To embed the figure in any notebook, display the instance itself
+            instead (see :meth:`_repr_html_`).
         """
         self._app_controller.run(port=port, debug=debug, mode=mode)
-
-    def _show_in_jupyter(self, debug: bool = False) -> None:
-        self._app_controller.show_in_jupyter(debug=debug)
 
     def _repr_html_(self) -> str:
         """Embed the visualization in notebook output (Jupyter, marimo, ...).

@@ -6,7 +6,7 @@ handling callbacks, hover/click events, and export functionality.
 """
 
 import random
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import dash
 import numpy as np
@@ -15,20 +15,6 @@ from dash import Input, Output, State, html
 
 if TYPE_CHECKING:
     from ._liveneuro import LiveNeuro
-
-
-# Check if we're running in a Jupyter environment
-def _is_jupyter_environment():
-    """Check if we're running in a Jupyter notebook environment."""
-    try:
-        from IPython import get_ipython
-
-        return get_ipython() is not None
-    except ImportError:
-        return False
-
-
-JUPYTER_AVAILABLE = _is_jupyter_environment()
 
 
 class AppControllerHelper:
@@ -220,7 +206,7 @@ class AppControllerHelper:
         debug: bool = False,
         mode: str | None = None,
     ) -> None:
-        """Run the Dash app with Jupyter integration support.
+        """Run the Dash app.
 
         Parameters
         ----------
@@ -229,72 +215,21 @@ class AppControllerHelper:
         debug
             Enable debug mode. Default is False for cleaner UI.
         mode
-            Display mode. Options:
-            - 'inline': Embed directly in Jupyter notebook (default in Jupyter)
-            - 'jupyterlab': Open in JupyterLab tab (modern Dash)
-            - 'external': Open in separate browser window (default outside Jupyter)
-            If None, automatically selects 'inline' in Jupyter, 'external' otherwise.
+            Display mode, passed to Dash as ``jupyter_mode``. Only used when
+            running under an IPython kernel (Jupyter); options are
+            ``"external"`` (default), ``"inline"``, and ``"jupyterlab"``.
+            Elsewhere the server runs in the foreground and the URL is printed.
         """
         if port is None:
             port = random.randint(8001, 9001)
 
-        # Auto-detect mode based on environment
-        if mode is None:
-            mode = "inline" if JUPYTER_AVAILABLE else "external"
-
-        if JUPYTER_AVAILABLE and mode in ["inline", "jupyterlab"]:
-            jupyter_mode: Literal["inline", "jupyterlab"] = (
-                "inline" if mode == "inline" else "jupyterlab"
-            )
-            # Prepare visualization for Jupyter (layout + sizing)
+        if mode in ("inline", "jupyterlab"):
             self._viz.prepare_for_jupyter()
+        iframe_height = self._viz._layout_helper.estimate_jupyter_iframe_height() or 900
 
-            # Auto-calculate height
-            iframe_height = self._viz._layout_helper.estimate_jupyter_iframe_height()
-            if iframe_height is None:
-                iframe_height = 900  # Fallback default
-
-            print(
-                "\nStarting 2D Brain Visualization with modern Dash Jupyter integration..."
-            )
-            print(f"Mode: {mode}, Auto height: {iframe_height}px")
-
-            # Use modern Dash Jupyter integration
-            self._viz.app.run(
-                debug=debug,
-                port=port,
-                jupyter_mode=jupyter_mode,
-                jupyter_height=iframe_height,
-            )
-        else:
-            print(f"\nStarting 2D Brain Visualization Dash app on port {port}...")
-            print(f"Open http://127.0.0.1:{port}/ in your browser")
-            if not JUPYTER_AVAILABLE and mode != "external":
-                print(
-                    "Note: Jupyter environment not detected, using external browser mode"
-                )
-            print()
-
-            self._viz.app.run(debug=debug, port=port)
-
-    def show_in_jupyter(self, debug: bool = False) -> None:
-        """Convenience method to display the visualization inline in Jupyter notebooks.
-
-        Parameters
-        ----------
-        debug
-            Enable debug mode. Default is False for cleaner output.
-        """
-        if not JUPYTER_AVAILABLE:
-            print("Warning: Jupyter environment not detected.")
-            print("Falling back to external browser mode...")
-            self.run(debug=debug)
-            return
-
-        # Prepare visualization for Jupyter (layout + sizing)
-        self._viz.prepare_for_jupyter()
-
-        self.run(mode="inline", debug=debug)
+        print(f"\nStarting 2D Brain Visualization Dash app on port {port}...")
+        print(f"Open http://127.0.0.1:{port}/ in your browser\n")
+        self._viz.app.run(debug=debug, port=port, jupyter_mode=mode, jupyter_height=iframe_height)
 
     def export_images(
         self,

@@ -140,7 +140,8 @@ figure appears inline, served from a background thread.
    LiveNeuro(y)
 
 Alternatively, :meth:`liveneuro.LiveNeuro.run` starts the Dash application
-explicitly. The common modes are:
+explicitly. From a script or shell it serves the app in the foreground and
+prints the URL. Under a Jupyter kernel, ``mode`` selects how Dash displays it:
 
 .. list-table::
    :header-rows: 1
