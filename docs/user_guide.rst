@@ -131,7 +131,16 @@ Time course and projections
 Running The Application
 -----------------------
 
-:meth:`liveneuro.LiveNeuro.run` starts the Dash application. The common modes are:
+In a notebook (Jupyter or marimo), a :class:`liveneuro.LiveNeuro` instance
+displays itself: make it the last expression of a cell and the interactive
+figure appears inline, served from a background thread.
+
+.. code-block:: python
+
+   LiveNeuro(y)
+
+Alternatively, :meth:`liveneuro.LiveNeuro.run` starts the Dash application
+explicitly. The common modes are:
 
 .. list-table::
    :header-rows: 1
