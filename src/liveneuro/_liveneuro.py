@@ -9,10 +9,15 @@ time-series plots.
 
 from __future__ import annotations
 
+import logging
+import threading
+from typing import Literal
+
 import dash
 import mne  # type: ignore[import-untyped]
 import numpy as np
 from eelbrain import NDVar
+from werkzeug.serving import BaseWSGIServer, make_server
 
 from ._data_loader_helper import BrainData, DataLoaderHelper
 from ._plot_factory_helper import PlotFactoryHelper
@@ -168,6 +173,7 @@ class LiveNeuro:
         # Scale factor for arrow length
         self.arrow_scale: float = arrow_scale
         self.is_jupyter_mode: bool = False  # Track if running in Jupyter mode
+        self._server: BaseWSGIServer | None = None  # Background server for inline display
         self.realtime_mode_default = (
             ["realtime"] if realtime else []
         )  # Default state for real-time mode
@@ -274,7 +280,7 @@ class LiveNeuro:
         self,
         port: int | None = None,
         debug: bool = False,
-        mode: str | None = None,
+        mode: Literal["inline", "external", "jupyterlab"] | None = None,
     ) -> None:
         """Run the interactive visualization.
 
@@ -285,13 +291,28 @@ class LiveNeuro:
         debug
             Enable Dash debug mode.
         mode
-            Display mode. If None, auto-selects based on environment.
-            Common values are ``"inline"``, ``"jupyterlab"``, and ``"external"``.
+            Display mode under an IPython kernel (Jupyter): ``"external"``
+            (default), ``"inline"``, or ``"jupyterlab"``. Ignored elsewhere.
+            To embed the figure in any notebook, display the instance itself
+            instead (see :meth:`_repr_html_`).
         """
         self._app_controller.run(port=port, debug=debug, mode=mode)
 
-    def _show_in_jupyter(self, debug: bool = False) -> None:
-        self._app_controller.show_in_jupyter(debug=debug)
+    def _repr_html_(self) -> str:
+        """Embed the visualization in notebook output (Jupyter, marimo, ...).
+
+        Starts the Dash server in a background thread on first display and
+        returns an iframe pointing at it, so a bare ``LiveNeuro(...)`` as the
+        last expression of a cell renders the interactive figure.
+        """
+        if self._server is None:
+            self.prepare_for_jupyter()
+            logging.getLogger("werkzeug").setLevel(logging.ERROR)  # Silence per-request log lines
+            self._server = make_server("127.0.0.1", 0, self.app.server, threaded=True)
+            threading.Thread(target=self._server.serve_forever, daemon=True).start()
+        height = self._layout_helper.estimate_jupyter_iframe_height() or 900
+        url = f"http://127.0.0.1:{self._server.server_port}/"
+        return f'<iframe src="{url}" width="100%" height="{height}" style="border:none;"></iframe>'
 
     def export_images(
         self,
