@@ -35,6 +35,20 @@ def test_jupyter_mode():
     assert viz.is_jupyter_mode is True
 
 
+def test_repr_html_serves_app():
+    """Inline display starts a background server and returns an iframe to it."""
+    import re
+    import urllib.request
+
+    viz = LiveNeuro()
+    html = viz._repr_html_()
+    assert viz.is_jupyter_mode is True
+    assert html == viz._repr_html_()  # Repeated display reuses the same server
+    url = re.search(r'src="([^"]+)"', html).group(1)
+    layout = urllib.request.urlopen(url + "_dash-layout", timeout=5).read()
+    assert len(layout) > 0
+
+
 def test_multiple_visualizations():
     """Test creating multiple visualizations doesn't interfere."""
     viz1 = LiveNeuro(cmap="Hot", show_max_only=False)
